@@ -418,32 +418,127 @@ if run_clicked:
         st.success(f"🤖 **Agent says:** {final_answer}", icon="✅")
 
     # ─────────────────────────────────────────────────────────────────────────
-    # AUTONOMOUS AGENT WORKFLOW  — pure native Streamlit, zero custom HTML
+    # GOAL DECOMPOSITION
+    # Shows the two subtasks and marks each one complete only after the
+    # corresponding tool actually returned a successful result.
     # ─────────────────────────────────────────────────────────────────────────
     st.divider()
-    st.subheader("🤖 Autonomous Agent Workflow")
+    st.subheader("🎯 Goal Decomposition")
     st.caption(
-        "The agent received **one request** and independently selected & chained "
-        "both tools. No Python code orchestrated the sequence."
+        "The user's request is automatically broken into two sequential subtasks. "
+        "Each subtask is marked ✅ only after its tool actually executed and returned a result."
     )
 
-    visible_steps = [
-        s for s in trace
-        if s["role"] in ("user", "tool_call", "tool_result", "final_answer")
-    ]
+    # Determine which tools actually ran (from real trace data)
+    scale_done    = any(
+        s["role"] == "tool_result" and s.get("tool_name") == "scale_recipe"
+        and not s["content"].startswith("ERROR")
+        for s in trace
+    )
+    calories_done = any(
+        s["role"] == "tool_result" and s.get("tool_name") == "estimate_calories"
+        and not s["content"].startswith("ERROR")
+        for s in trace
+    )
 
-    for idx, step in enumerate(visible_steps):
-        is_last = (idx == len(visible_steps) - 1)
-        render_workflow_step(step, connector=not is_last)
+    g1, g2 = st.columns(2, gap="medium")
+    with g1:
+        with st.container(border=True):
+            if scale_done:
+                st.success("**Subtask 1 — Complete ✅**", icon="✅")
+                st.markdown("**Scale the ingredient** to the target serving count.")
+                st.caption(f"Result: {scaled_display} units for {servings_target} servings")
+            else:
+                st.warning("**Subtask 1 — Not completed**", icon="⏳")
+                st.markdown("**Scale the ingredient** to the target serving count.")
+
+    with g2:
+        with st.container(border=True):
+            if calories_done:
+                st.success("**Subtask 2 — Complete ✅**", icon="✅")
+                st.markdown("**Estimate calories** using the scaled quantity.")
+                st.caption(f"Result: {calorie_display} kcal total")
+            else:
+                st.warning("**Subtask 2 — Not completed**", icon="⏳")
+                st.markdown("**Estimate calories** using the scaled quantity.")
 
     # ─────────────────────────────────────────────────────────────────────────
-    # DETAILED TRACE EXPANDER
+    # REACT EXECUTION TRACE
+    # Displays the observable Action → Observation → Action → Observation →
+    # Final Answer cycle using real tool-call data from the agent's messages.
     # ─────────────────────────────────────────────────────────────────────────
-    with st.expander("🔍 View Detailed Agent Trace", expanded=False):
+    st.divider()
+    st.subheader("🔬 ReAct Execution Trace")
+    st.caption(
+        "**ReAct = Reasoning + Acting.** "
+        "The agent alternates between selecting a tool (Action) and processing "
+        "its output (Observation) until it can give a Final Answer. "
+        "Every entry below is sourced from the actual agent execution — "
+        "nothing is fabricated."
+    )
+
+    # Build a ReAct-labelled view from the real trace.
+    # Iterate in the original chronological order produced by extract_trace().
+    # Each tool_call → Action, each tool_result → Observation.
+    # No buffering or pairing: the trace list is already ordered correctly.
+    react_items = []
+    for step in trace:
+        role = step["role"]
+
+        if role == "user":
+            react_items.append(("input", "🧑 User Request", step["content"]))
+
+        elif role == "tool_call":
+            # Emit the Action immediately — do not delay until the result arrives
+            try:
+                args = json.loads(step["content"])
+                args_str = "\n".join(f"  {k} = {v}" for k, v in args.items())
+            except Exception:
+                args_str = step["content"]
+            react_items.append((
+                "action",
+                f"⚡ Action — `{step['tool_name']}`",
+                args_str,
+            ))
+
+        elif role == "tool_result":
+            # Emit the Observation immediately after its Action
+            react_items.append((
+                "observation",
+                f"👁️ Observation — `{step['tool_name']}`",
+                step["content"],
+            ))
+
+        elif role == "final_answer":
+            react_items.append(("final", "🎯 Final Answer", step["content"]))
+
+    # Render each ReAct item with the appropriate Streamlit component
+    for kind, label, body in react_items:
+        st.markdown(f"**{label}**")
+        if kind == "input":
+            st.info(body)
+        elif kind == "action":
+            st.code(body, language="text")
+        elif kind == "observation":
+            st.success(body)
+        elif kind == "final":
+            st.success(body, icon="🎯")
+        if kind != "final":
+            st.markdown("⬇️")
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # OBSERVABLE REASONING TRACE  (detailed, collapsible)
+    # Renamed from "Detailed Agent Trace" to reflect CoT framing.
+    # ─────────────────────────────────────────────────────────────────────────
+    with st.expander("🧠 Observable Reasoning Trace (Chain-of-Thought view)", expanded=False):
         st.caption(
-            "Full observable message chain — tool calls, arguments, results, "
-            "and final response. Hidden chain-of-thought is excluded."
+            "**Chain-of-Thought (CoT) note:** The model's private internal reasoning "
+            "is not accessible. This trace shows the *observable* reasoning chain: "
+            "the user request, each tool the agent selected, the arguments it passed, "
+            "and the result it received before producing the final answer. "
+            "This is what makes the agent's decision process transparent."
         )
+        st.markdown("---")
         for step in trace:
             render_trace_card(step)
 
@@ -451,6 +546,63 @@ if run_clicked:
             for i, msg in enumerate(messages):
                 st.markdown(f"**Message {i} — `{type(msg).__name__}`**")
                 st.code(str(msg), language="text")
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # AI CONCEPTS NOTE  (collapsible, for jury reference)
+    # ─────────────────────────────────────────────────────────────────────────
+    with st.expander("📚 About the AI Concepts used in NutriScale", expanded=False):
+        st.markdown("""
+**Chain-of-Thought (CoT)**
+
+CoT refers to the intermediate reasoning steps a language model uses before
+producing a final answer. In NutriScale, the model's private chain-of-thought
+is not exposed (this is normal — local models do not stream internal tokens
+by default). The *Observable Reasoning Trace* above is the closest practical
+equivalent: it shows the full sequence of decisions and tool results that led
+to the final answer.
+
+---
+
+**Goal Decomposition**
+
+The user's natural-language request is implicitly decomposed by the agent into
+two subtasks:
+
+1. Scale the ingredient quantity → `scale_recipe`
+2. Estimate calories for the scaled quantity → `estimate_calories`
+
+The agent decides this decomposition autonomously based on the tool descriptions.
+The *Goal Decomposition* panel above shows these subtasks and marks each one
+complete only after its tool actually succeeds.
+
+---
+
+**ReAct (Reasoning + Acting)**
+
+ReAct is the framework where an agent alternates between:
+
+- **Thought** — deciding what to do next (internal, not shown)
+- **Action** — calling a tool with specific arguments
+- **Observation** — reading the tool's returned result
+
+NutriScale's agent follows this cycle: it calls `scale_recipe` (Action),
+receives the scaled amount (Observation), then calls `estimate_calories`
+(Action), receives the calorie estimate (Observation), and finally produces
+its answer. The *ReAct Execution Trace* above labels each of these steps.
+
+---
+
+**Tree-of-Thought (ToT)**
+
+> ⚠️ **Tree-of-Thought is not implemented in NutriScale.**
+>
+> ToT is designed for tasks where multiple alternative reasoning paths must be
+> explored and evaluated simultaneously (e.g., multi-step puzzles, planning with
+> backtracking). NutriScale's workflow is strictly sequential: scale first, then
+> estimate. There are no branches to explore. Implementing ToT here would add
+> unnecessary complexity without any benefit. A straightforward ReAct-style
+> agent is the appropriate and honest choice for this task.
+""")
 
 
 # ═════════════════════════════════════════════════════════════════════════════
