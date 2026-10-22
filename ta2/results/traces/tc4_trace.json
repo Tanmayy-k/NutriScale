@@ -1,0 +1,32 @@
+{
+  "tc_id": "TC4",
+  "request": "Long-term SQLite memory recall",
+  "answer": "The nutrition information for pasta, as provided in our reference database, indicates that:\n\n- Dry pasta contains approximately 3.5 kcal per gram.\n- Cooked pasta (boiled) absorbs water, resulting in approximately 1.3-1.6 kcal per gram.\n\nDISCLAIMER: These are reference estimates and not medically precise facts.\n\nBased on this information, pasta is a carbohydrate-rich ingredient, with its calorie density varying slightly depending on whether it is dry or cooked. Your user ID \"eval_user\" has indicated a preference for pasta, so this information should be relevant to your query.",
+  "guard_ok": true,
+  "route": "nutrition",
+  "trace": [
+    {
+      "node": "guard",
+      "event": "checking",
+      "request": "What is my favourite ingredient? (my user id is eval_user)"
+    },
+    {
+      "node": "guard",
+      "decision": "PASS"
+    },
+    {
+      "node": "allergen_guard",
+      "decision": "PASS"
+    },
+    {
+      "node": "supervisor",
+      "route": "nutrition"
+    },
+    {
+      "node": "nutrition_agent",
+      "elapsed_s": 2.4,
+      "answer_preview": "The nutrition information for pasta, as provided in our reference database, indicates that:\n\n- Dry pasta contains approx"
+    }
+  ],
+  "elapsed_s": 2.401
+}

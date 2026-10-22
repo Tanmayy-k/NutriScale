@@ -1,0 +1,32 @@
+{
+  "tc_id": "TC2",
+  "request": "RAG-backed nutrition question",
+  "answer": "Based on the information from the knowledge base:\n\n- Raw chicken breast has approximately 1.1 kcal per gram.\n- A medium-sized cooked chicken breast (about 120 grams) contains about 198 kcal.\n- A restaurant portion of chicken (about 150-180 grams) contains approximately 248-297 kcal.\n\nPlease note that these are reference estimates and not medically precise facts.",
+  "guard_ok": true,
+  "route": "nutrition",
+  "trace": [
+    {
+      "node": "guard",
+      "event": "checking",
+      "request": "What is the calorie density of chicken breast per gram? Retrieve from the knowledge base."
+    },
+    {
+      "node": "guard",
+      "decision": "PASS"
+    },
+    {
+      "node": "allergen_guard",
+      "decision": "PASS"
+    },
+    {
+      "node": "supervisor",
+      "route": "nutrition"
+    },
+    {
+      "node": "nutrition_agent",
+      "elapsed_s": 3.67,
+      "answer_preview": "Based on the information from the knowledge base:\n\n- Raw chicken breast has approximately 1.1 kcal per gram.\n- A medium-"
+    }
+  ],
+  "elapsed_s": 3.673
+}

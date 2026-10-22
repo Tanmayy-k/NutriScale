@@ -1,0 +1,122 @@
+[
+  {
+    "case_id": "ATC1",
+    "name": "Matching declared allergy (direct)",
+    "request": "Scale 200g of wheat bread from 4 to 8 servings and estimate calories",
+    "user_id": "allergy_test_user",
+    "thread_id": "atc1",
+    "guard_ok": false,
+    "guard_reason": "Allergen match: gluten (matched 'wheat') found in request.",
+    "answer": "Request blocked: Allergen match: gluten (matched 'wheat') found in request.",
+    "route": null,
+    "trace": [
+      {
+        "node": "guard",
+        "event": "checking",
+        "request": "Scale 200g of wheat bread from 4 to 8 servings and estimate calories"
+      },
+      {
+        "node": "guard",
+        "decision": "PASS"
+      },
+      {
+        "node": "allergen_guard",
+        "decision": "BLOCKED",
+        "reason": "Allergen match: gluten (matched 'wheat') found in request."
+      }
+    ],
+    "status": "PASS"
+  },
+  {
+    "case_id": "ATC2",
+    "name": "No known match (safe ingredient)",
+    "request": "Scale 200g of rice from 4 to 8 servings and estimate calories",
+    "user_id": "allergy_test_user",
+    "thread_id": "atc2",
+    "guard_ok": true,
+    "guard_reason": null,
+    "answer": "The scaled amount of rice for 8 servings is 400.00 units, which is twice the original 200.00 units for 4 servings. \n\nBased on the verified reference data, 200 units of rice contain 800 kcal. Therefore, for 8 servings, the estimated total calories are 800.00 kcal.\n[Tool output] Estimated calories: 800.00 kcal (200.00 units x 4.0 kcal/unit = 800.00 kcal)",
+    "route": "recipe",
+    "trace": [
+      {
+        "node": "guard",
+        "event": "checking",
+        "request": "Scale 200g of rice from 4 to 8 servings and estimate calories"
+      },
+      {
+        "node": "guard",
+        "decision": "PASS"
+      },
+      {
+        "node": "allergen_guard",
+        "decision": "PASS"
+      },
+      {
+        "node": "supervisor",
+        "route": "recipe"
+      },
+      {
+        "node": "recipe_agent",
+        "elapsed_s": 2.42,
+        "answer_preview": "The scaled amount of rice for 8 servings is 400.00 units, which is twice the original 200.00 units for 4 servings. \n\nBas"
+      }
+    ],
+    "status": "PASS"
+  },
+  {
+    "case_id": "ATC3",
+    "name": "Unknown/ambiguous ingredient",
+    "request": "Scale 100g of unknown mystery ingredient from 2 to 4 servings",
+    "user_id": "allergy_test_user",
+    "thread_id": "atc3",
+    "guard_ok": false,
+    "guard_reason": "UNKNOWN: ingredient is ambiguous, blocked pending clarification.",
+    "answer": "Request blocked: UNKNOWN: ingredient is ambiguous, blocked pending clarification.",
+    "route": null,
+    "trace": [
+      {
+        "node": "guard",
+        "event": "checking",
+        "request": "Scale 100g of unknown mystery ingredient from 2 to 4 servings"
+      },
+      {
+        "node": "guard",
+        "decision": "PASS"
+      },
+      {
+        "node": "allergen_guard",
+        "decision": "BLOCKED",
+        "reason": "UNKNOWN: ingredient is ambiguous, blocked pending clarification."
+      }
+    ],
+    "status": "PASS"
+  },
+  {
+    "case_id": "ATC4",
+    "name": "Alias/Synonym match (peanut -> groundnut)",
+    "request": "Scale 50g of groundnut sauce from 2 to 4 servings",
+    "user_id": "allergy_test_user",
+    "thread_id": "atc4",
+    "guard_ok": false,
+    "guard_reason": "Allergen match: peanut (matched 'groundnut') found in request.",
+    "answer": "Request blocked: Allergen match: peanut (matched 'groundnut') found in request.",
+    "route": null,
+    "trace": [
+      {
+        "node": "guard",
+        "event": "checking",
+        "request": "Scale 50g of groundnut sauce from 2 to 4 servings"
+      },
+      {
+        "node": "guard",
+        "decision": "PASS"
+      },
+      {
+        "node": "allergen_guard",
+        "decision": "BLOCKED",
+        "reason": "Allergen match: peanut (matched 'groundnut') found in request."
+      }
+    ],
+    "status": "PASS"
+  }
+]

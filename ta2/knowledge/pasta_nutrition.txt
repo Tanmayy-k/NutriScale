@@ -1,0 +1,35 @@
+SOURCE: pasta_nutrition.txt
+TITLE: Pasta — Nutrition Reference
+
+Pasta (dry, wheat-based) is a versatile carbohydrate-rich ingredient.
+
+Calorie density:
+  - Dry pasta: approximately 3.5 kcal per gram (before cooking)
+  - Cooked pasta (boiled): approximately 1.3-1.6 kcal per gram (absorbs water)
+
+Macronutrients per 100 g dry pasta:
+  - Calories: 350 kcal
+  - Carbohydrates: 70 g
+  - Protein: 13 g
+  - Fat: 1.5 g
+  - Fibre: 2.5 g
+
+Macronutrients per 100 g cooked pasta (plain, no sauce):
+  - Calories: 131-158 kcal
+  - Carbohydrates: 25-31 g
+  - Protein: 5 g
+  - Fat: 0.5-1.0 g
+
+Whole-wheat pasta (cooked): ~1.4 kcal/g (slightly higher fibre content).
+Egg noodles (cooked): ~1.38 kcal/g.
+
+Common serving sizes:
+  - 1 cup cooked pasta ≈ 140 g → approximately 196-221 kcal
+  - A typical restaurant portion ≈ 200-250 g → 262-395 kcal
+
+Note: Pasta sauce adds significant additional calories.
+Plain tomato sauce adds roughly 30-50 kcal per 100 ml.
+Cream-based sauces can add 150-250 kcal per 100 ml.
+
+DISCLAIMER: These are reference estimates sourced from general nutrition databases.
+They are not medically precise values and should not be used for clinical dietary planning.

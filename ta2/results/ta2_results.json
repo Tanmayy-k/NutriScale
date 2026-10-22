@@ -1,0 +1,186 @@
+[
+  {
+    "tc_id": "TC1",
+    "description": "Basic scaling + calorie estimate",
+    "version": "TA2",
+    "status": "PASS",
+    "answer": "Based on the scaled amount and the provided calorie information, the estimated total calories for 8 servings of rice is 520.00 kcal. Your preferred cuisine is pasta, but the question was specifically about rice. If you have any other requests or need further assistance, feel free to ask!\n[Tool output] Estimated calories: 520.00 kcal (400.00 units x 1.3 kcal/unit = 520.00 kcal)",
+    "route": "recipe",
+    "guard_ok": true,
+    "metrics": {
+      "scaled_g": null,
+      "kcal": 520.0,
+      "kcal_error": 0.0,
+      "scaling_correct": false
+    },
+    "trace": [
+      {
+        "node": "guard",
+        "event": "checking",
+        "request": "Scale 200g of rice from 4 servings to 8 servings. Calories per gram: 1.3."
+      },
+      {
+        "node": "guard",
+        "decision": "PASS"
+      },
+      {
+        "node": "allergen_guard",
+        "decision": "PASS"
+      },
+      {
+        "node": "supervisor",
+        "route": "recipe"
+      },
+      {
+        "node": "recipe_agent",
+        "elapsed_s": 2.17,
+        "answer_preview": "Based on the scaled amount and the provided calorie information, the estimated total calories for 8 servings of rice is "
+      }
+    ],
+    "error": null,
+    "elapsed_s": 2.178
+  },
+  {
+    "tc_id": "TC2",
+    "description": "RAG-backed nutrition question",
+    "version": "TA2",
+    "status": "PASS",
+    "answer": "Based on the information from the knowledge base:\n\n- Raw chicken breast has approximately 1.1 kcal per gram.\n- A medium-sized cooked chicken breast (about 120 grams) contains about 198 kcal.\n- A restaurant portion of chicken (about 150-180 grams) contains approximately 248-297 kcal.\n\nPlease note that these are reference estimates and not medically precise facts.",
+    "route": "nutrition",
+    "guard_ok": true,
+    "metrics": {
+      "rag_source_cited": true
+    },
+    "trace": [
+      {
+        "node": "guard",
+        "event": "checking",
+        "request": "What is the calorie density of chicken breast per gram? Retrieve from the knowledge base."
+      },
+      {
+        "node": "guard",
+        "decision": "PASS"
+      },
+      {
+        "node": "allergen_guard",
+        "decision": "PASS"
+      },
+      {
+        "node": "supervisor",
+        "route": "nutrition"
+      },
+      {
+        "node": "nutrition_agent",
+        "elapsed_s": 3.67,
+        "answer_preview": "Based on the information from the knowledge base:\n\n- Raw chicken breast has approximately 1.1 kcal per gram.\n- A medium-"
+      }
+    ],
+    "error": null,
+    "elapsed_s": 3.673
+  },
+  {
+    "tc_id": "TC3",
+    "description": "Thread memory follow-up",
+    "version": "TA2",
+    "status": "PASS",
+    "answer": "Based on what we just scaled, estimate calories at 1.3 kcal per gram.\nUser preferences: {\"favourite_ingredient\": \"pasta\"}\n[Tool output] Estimated calories: 36000.00 kcal (400.00 units x 90.0 kcal/unit = 36000.00 kcal)",
+    "route": "nutrition",
+    "guard_ok": true,
+    "metrics": {
+      "memory_retrieved": true
+    },
+    "trace": [
+      {
+        "node": "guard",
+        "event": "checking",
+        "request": "Based on what we just scaled, estimate calories at 1.3 kcal per gram."
+      },
+      {
+        "node": "guard",
+        "decision": "PASS"
+      },
+      {
+        "node": "allergen_guard",
+        "decision": "PASS"
+      },
+      {
+        "node": "supervisor",
+        "route": "nutrition"
+      },
+      {
+        "node": "nutrition_agent",
+        "elapsed_s": 0.45,
+        "answer_preview": "Based on what we just scaled, estimate calories at 1.3 kcal per gram.\nUser preferences: {\"favourite_ingredient\": \"pasta\""
+      }
+    ],
+    "error": null,
+    "elapsed_s": 0.454
+  },
+  {
+    "tc_id": "TC4",
+    "description": "Long-term SQLite memory recall",
+    "version": "TA2",
+    "status": "PASS",
+    "answer": "The nutrition information for pasta, as provided in our reference database, indicates that:\n\n- Dry pasta contains approximately 3.5 kcal per gram.\n- Cooked pasta (boiled) absorbs water, resulting in approximately 1.3-1.6 kcal per gram.\n\nDISCLAIMER: These are reference estimates and not medically precise facts.\n\nBased on this information, pasta is a carbohydrate-rich ingredient, with its calorie density varying slightly depending on whether it is dry or cooked. Your user ID \"eval_user\" has indicated a preference for pasta, so this information should be relevant to your query.",
+    "route": "nutrition",
+    "guard_ok": true,
+    "metrics": {
+      "prefs_in_db": {
+        "favourite_ingredient": "pasta"
+      },
+      "pref_retrieved": true
+    },
+    "trace": [
+      {
+        "node": "guard",
+        "event": "checking",
+        "request": "What is my favourite ingredient? (my user id is eval_user)"
+      },
+      {
+        "node": "guard",
+        "decision": "PASS"
+      },
+      {
+        "node": "allergen_guard",
+        "decision": "PASS"
+      },
+      {
+        "node": "supervisor",
+        "route": "nutrition"
+      },
+      {
+        "node": "nutrition_agent",
+        "elapsed_s": 2.4,
+        "answer_preview": "The nutrition information for pasta, as provided in our reference database, indicates that:\n\n- Dry pasta contains approx"
+      }
+    ],
+    "error": null,
+    "elapsed_s": 2.401
+  },
+  {
+    "tc_id": "TC5",
+    "description": "Guard blocks negative servings",
+    "version": "TA2",
+    "status": "PASS",
+    "answer": "Request blocked: Blocked: negative number(s) [-50.0, -2.0] in request.",
+    "route": null,
+    "guard_ok": false,
+    "metrics": {
+      "guard_blocked": true
+    },
+    "trace": [
+      {
+        "node": "guard",
+        "event": "checking",
+        "request": "Scale -50g of rice from -2 servings to 8 servings."
+      },
+      {
+        "node": "guard",
+        "decision": "BLOCKED",
+        "reason": "Blocked: negative number(s) [-50.0, -2.0] in request."
+      }
+    ],
+    "error": null,
+    "elapsed_s": 0.001
+  }
+]

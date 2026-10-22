@@ -1,0 +1,32 @@
+{
+  "tc_id": "TC1",
+  "request": "Basic scaling + calorie estimate",
+  "answer": "Based on the scaled amount and the provided calorie information, the estimated total calories for 8 servings of rice is 520.00 kcal. Your preferred cuisine is pasta, but the question was specifically about rice. If you have any other requests or need further assistance, feel free to ask!\n[Tool output] Estimated calories: 520.00 kcal (400.00 units x 1.3 kcal/unit = 520.00 kcal)",
+  "guard_ok": true,
+  "route": "recipe",
+  "trace": [
+    {
+      "node": "guard",
+      "event": "checking",
+      "request": "Scale 200g of rice from 4 servings to 8 servings. Calories per gram: 1.3."
+    },
+    {
+      "node": "guard",
+      "decision": "PASS"
+    },
+    {
+      "node": "allergen_guard",
+      "decision": "PASS"
+    },
+    {
+      "node": "supervisor",
+      "route": "recipe"
+    },
+    {
+      "node": "recipe_agent",
+      "elapsed_s": 2.17,
+      "answer_preview": "Based on the scaled amount and the provided calorie information, the estimated total calories for 8 servings of rice is "
+    }
+  ],
+  "elapsed_s": 2.178
+}

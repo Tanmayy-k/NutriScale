@@ -1,0 +1,44 @@
+[
+  {
+    "ingredient": "rice",
+    "food_state": "cooked",
+    "amount_used": 400.0,
+    "rag_calories_per_unit": 1.3,
+    "rag_total_kcal": 520.0,
+    "rag_source": "rice_nutrition.txt",
+    "manual_baseline_calories_per_unit": 1.5,
+    "manual_total_kcal": 600.0,
+    "manual_label": "Comparison baseline only (not an authoritative reference)",
+    "absolute_difference": 80.0,
+    "percentage_difference": 13.33,
+    "limitations": "RAG density represents cooked white rice (~1.3 kcal/g). Uncooked rice is ~3.6 kcal/g."
+  },
+  {
+    "ingredient": "chicken",
+    "food_state": "cooked",
+    "amount_used": 300.0,
+    "rag_calories_per_unit": 1.65,
+    "rag_total_kcal": 495.0,
+    "rag_source": "chicken_nutrition.txt",
+    "manual_baseline_calories_per_unit": 2.0,
+    "manual_total_kcal": 600.0,
+    "manual_label": "Comparison baseline only (not an authoritative reference)",
+    "absolute_difference": 105.0,
+    "percentage_difference": 17.5,
+    "limitations": "Reference doc notes cooked chicken is ~1.65 kcal/g, raw chicken is ~1.1 kcal/g due to moisture loss."
+  },
+  {
+    "ingredient": "quinoa",
+    "food_state": "unknown",
+    "amount_used": 400.0,
+    "rag_calories_per_unit": "UNKNOWN",
+    "rag_total_kcal": "UNKNOWN",
+    "rag_source": "NONE (not in knowledge base)",
+    "manual_baseline_calories_per_unit": 1.2,
+    "manual_total_kcal": 480.0,
+    "manual_label": "Comparison baseline only (not an authoritative reference)",
+    "absolute_difference": "UNKNOWN",
+    "percentage_difference": "UNKNOWN",
+    "note": "Ingredient 'quinoa' not found in knowledge base (returned None/UNKNOWN). Model cannot guess."
+  }
+]

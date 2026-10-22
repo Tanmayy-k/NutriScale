@@ -1,0 +1,80 @@
+[
+  {
+    "ingredient": "rice",
+    "original_amount": 200.0,
+    "original_servings": 4.0,
+    "target_servings": 8.0,
+    "expected_scaled": 400.0,
+    "actual_scaled": 400.0,
+    "formula_result": 400.0,
+    "diff": 0.0,
+    "tolerance_percent": 1.0,
+    "pass_fail": "PASS",
+    "tool_output_string": "Scaled ingredient amount: 400.00 units (original: 200.0 units for 4.0 servings \u2192 400.00 units for 8.0 servings, scaling factor: 2.0000)"
+  },
+  {
+    "ingredient": "chicken",
+    "original_amount": 300.0,
+    "original_servings": 3.0,
+    "target_servings": 6.0,
+    "expected_scaled": 600.0,
+    "actual_scaled": 600.0,
+    "formula_result": 600.0,
+    "diff": 0.0,
+    "tolerance_percent": 1.0,
+    "pass_fail": "PASS",
+    "tool_output_string": "Scaled ingredient amount: 600.00 units (original: 300.0 units for 3.0 servings \u2192 600.00 units for 6.0 servings, scaling factor: 2.0000)"
+  },
+  {
+    "ingredient": "pasta",
+    "original_amount": 150.0,
+    "original_servings": 2.0,
+    "target_servings": 5.0,
+    "expected_scaled": 375.0,
+    "actual_scaled": 375.0,
+    "formula_result": 375.0,
+    "diff": 0.0,
+    "tolerance_percent": 1.0,
+    "pass_fail": "PASS",
+    "tool_output_string": "Scaled ingredient amount: 375.00 units (original: 150.0 units for 2.0 servings \u2192 375.00 units for 5.0 servings, scaling factor: 2.5000)"
+  },
+  {
+    "ingredient": "rice",
+    "original_amount": 200.0,
+    "original_servings": 4.0,
+    "target_servings": 8.0,
+    "expected_scaled": 300.0,
+    "actual_scaled": 400.0,
+    "formula_result": 400.0,
+    "diff": 100.0,
+    "tolerance_percent": 1.0,
+    "pass_fail": "FAIL",
+    "tool_output_string": "Scaled ingredient amount: 400.00 units (original: 200.0 units for 4.0 servings \u2192 400.00 units for 8.0 servings, scaling factor: 2.0000)"
+  },
+  {
+    "ingredient": "rice",
+    "original_amount": -50.0,
+    "original_servings": 4.0,
+    "target_servings": 8.0,
+    "expected_scaled": null,
+    "actual_scaled": null,
+    "formula_result": "INVALID_INPUT",
+    "diff": null,
+    "tolerance_percent": 1.0,
+    "pass_fail": "PASS",
+    "tool_output_string": "ERROR: ingredient_amount cannot be negative (received -50.0). Physical quantities of ingredients cannot be less than zero."
+  },
+  {
+    "ingredient": "rice",
+    "original_amount": 200.0,
+    "original_servings": 0.0,
+    "target_servings": 8.0,
+    "expected_scaled": null,
+    "actual_scaled": null,
+    "formula_result": "INVALID_INPUT",
+    "diff": null,
+    "tolerance_percent": 1.0,
+    "pass_fail": "PASS",
+    "tool_output_string": "ERROR: servings_original must be greater than 0 (received 0.0). Cannot scale a recipe with zero or negative servings \u2014 that would cause division by zero or meaningless results."
+  }
+]

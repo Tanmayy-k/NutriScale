@@ -1,0 +1,24 @@
+SOURCE: rice_nutrition.txt
+TITLE: White Rice — Nutrition Reference
+
+White rice (cooked) is a staple carbohydrate source widely used in recipes worldwide.
+
+Calorie density: approximately 1.3 kcal per gram (cooked weight).
+Macronutrients per 100 g cooked:
+  - Calories: 130 kcal
+  - Carbohydrates: 28.2 g
+  - Protein: 2.7 g
+  - Fat: 0.3 g
+  - Fibre: 0.4 g
+
+Brown rice (cooked) has slightly more fibre and a similar calorie density (~1.1-1.4 kcal/g).
+Basmati rice is similar in calories to white rice (~1.3 kcal/g cooked).
+
+Common serving sizes:
+  - 1 cup cooked rice ≈ 186 g → approximately 242 kcal
+  - A typical restaurant portion ≈ 150-200 g → 195-260 kcal
+
+Storage: Cooked rice should be consumed within 1-2 days if refrigerated.
+
+DISCLAIMER: These are reference estimates sourced from general nutrition databases.
+They are not medically precise values and should not be used for clinical dietary planning.

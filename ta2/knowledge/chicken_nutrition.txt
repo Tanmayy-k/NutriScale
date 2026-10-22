@@ -1,0 +1,27 @@
+SOURCE: chicken_nutrition.txt
+TITLE: Chicken Breast — Nutrition Reference
+
+Chicken breast (boneless, skinless) is a lean protein source commonly used in recipes.
+
+Calorie density: approximately 1.65 kcal per gram (cooked, grilled or baked).
+Macronutrients per 100 g cooked:
+  - Calories: 165 kcal
+  - Carbohydrates: 0 g
+  - Protein: 31 g
+  - Fat: 3.6 g
+  - Sodium: 74 mg
+
+Raw chicken breast has slightly fewer calories (~1.1 kcal/g raw weight) because it loses
+water during cooking and concentrates nutrients.
+
+Common serving sizes:
+  - 1 medium chicken breast ≈ 120 g cooked → approximately 198 kcal
+  - A restaurant chicken portion ≈ 150-180 g → 248-297 kcal
+
+Chicken thigh (skinless, boneless, cooked): ~2.1 kcal/g (higher fat content).
+Chicken with skin adds roughly 50-80 kcal per 100 g serving.
+
+Safe cooking: Chicken must be cooked to an internal temperature of 74°C (165°F) to be safe.
+
+DISCLAIMER: These are reference estimates sourced from general nutrition databases.
+They are not medically precise values and should not be used for clinical dietary planning.

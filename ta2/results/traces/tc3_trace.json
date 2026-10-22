@@ -1,0 +1,32 @@
+{
+  "tc_id": "TC3",
+  "request": "Thread memory follow-up",
+  "answer": "Based on what we just scaled, estimate calories at 1.3 kcal per gram.\nUser preferences: {\"favourite_ingredient\": \"pasta\"}\n[Tool output] Estimated calories: 36000.00 kcal (400.00 units x 90.0 kcal/unit = 36000.00 kcal)",
+  "guard_ok": true,
+  "route": "nutrition",
+  "trace": [
+    {
+      "node": "guard",
+      "event": "checking",
+      "request": "Based on what we just scaled, estimate calories at 1.3 kcal per gram."
+    },
+    {
+      "node": "guard",
+      "decision": "PASS"
+    },
+    {
+      "node": "allergen_guard",
+      "decision": "PASS"
+    },
+    {
+      "node": "supervisor",
+      "route": "nutrition"
+    },
+    {
+      "node": "nutrition_agent",
+      "elapsed_s": 0.45,
+      "answer_preview": "Based on what we just scaled, estimate calories at 1.3 kcal per gram.\nUser preferences: {\"favourite_ingredient\": \"pasta\""
+    }
+  ],
+  "elapsed_s": 0.454
+}
