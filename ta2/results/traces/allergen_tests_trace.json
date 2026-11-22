@@ -35,7 +35,7 @@
     "thread_id": "atc2",
     "guard_ok": true,
     "guard_reason": null,
-    "answer": "The scaled amount of rice for 8 servings is 400.00 units, which is twice the original 200.00 units for 4 servings. \n\nBased on the verified reference data, 200 units of rice contain 800 kcal. Therefore, for 8 servings, the estimated total calories are 800.00 kcal.\n[Tool output] Estimated calories: 800.00 kcal (200.00 units x 4.0 kcal/unit = 800.00 kcal)",
+    "answer": "The scaled amount of rice for 8 servings is 400.00 units, which is twice the original 200.00 units for 4 servings. \n\nBased on the estimated data from the knowledge base, 400.00 units of rice would contain approximately 750.00 kcal. \n\nPlease note that these values are based on verified reference data and may vary depending on the specific type and quality of rice.\n[Tool output] Estimated calories: 750.00 kcal (250.00 units x 3.0 kcal/unit = 750.00 kcal)",
     "route": "recipe",
     "trace": [
       {
@@ -57,7 +57,7 @@
       },
       {
         "node": "recipe_agent",
-        "elapsed_s": 2.42,
+        "elapsed_s": 3.28,
         "answer_preview": "The scaled amount of rice for 8 servings is 400.00 units, which is twice the original 200.00 units for 4 servings. \n\nBas"
       }
     ],
