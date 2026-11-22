@@ -1,0 +1,19 @@
+{
+    "logs": [
+        {
+            "outputFile": "com.nutriscale.app-mergeDebugResources-49:/values-v16/values-v16.xml",
+            "map": [
+                {
+                    "source": "C:\\Users\\Tanmay\\.gradle\\caches\\transforms-3\\7e016a01975e0629b514b14530ea2272\\transformed\\core-1.12.0\\res\\values-v16\\values-v16.xml",
+                    "from": {
+                        "startLines": "2",
+                        "startColumns": "4",
+                        "startOffsets": "55",
+                        "endColumns": "65",
+                        "endOffsets": "116"
+                    }
+                }
+            ]
+        }
+    ]
+}

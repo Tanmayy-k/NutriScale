@@ -1,372 +1,472 @@
-# NutriScale — Recipe Scaler & Nutrition Estimator
+# NutriScale - AI-Powered Nutrition & Recipe Scaling Assistant
 
-NutriScale is an Agentic AI application built for a college jury project. It translates natural-language cooking requests into exact, deterministic recipe adjustments and nutritional evaluations without requiring users to orchestrate tool sequences manually.
+![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)
+![LangGraph](https://img.shields.io/badge/LangGraph-000000?style=for-the-badge)
+![Kotlin](https://img.shields.io/badge/Kotlin-7F52FF?style=for-the-badge&logo=kotlin&logoColor=white)
+![Android](https://img.shields.io/badge/Jetpack%20Compose-3DDC84?style=for-the-badge&logo=android&logoColor=white)
+![Ollama](https://img.shields.io/badge/Ollama-000000?style=for-the-badge)
 
-The project encompasses two stages:
-1. **TA1 (Baseline):** A single-agent autonomous tool-calling loop using LangChain, Ollama (`qwen2.5:3b`), and Streamlit.
-2. **TA2 (Extension):** A stateful, multi-agent architecture built with LangGraph, introducing persistent SQLite memory, local Chroma vector search (RAG via `nomic-embed-text`), an allergen and ambiguity safety guard, and an independent mathematical scaling critic.
+NutriScale is a local, multi-agent nutrition application that combines deterministic recipe calculations, RAG-based nutrition lookup, persistent allergy management, and a native Android client.
 
----
+The project includes:
+
+- a TA1 baseline Streamlit agent and tool implementation;
+- a TA2 LangGraph multi-agent system with guard nodes, RAG, SQLite memory, and trace data;
+- a FastAPI mobile gateway;
+- an Android app built with Kotlin and Jetpack Compose.
+
+LLM inference and the project knowledge base run locally. NutriScale does not require a cloud model API key.
 
 ## Table of Contents
 
-- [Project Overview](#project-overview)
-- [Evolution: TA1 vs. TA2](#evolution-ta1-vs-ta2)
-- [TA1 — Original Baseline Implementation](#ta1--original-baseline-implementation)
-- [TA2 — Multi-Agent Architecture](#ta2--multi-agent-architecture)
-- [Walkthrough Example](#walkthrough-example)
+- [Key Features](#key-features)
+- [System Architecture](#system-architecture)
+- [Multi-Agent Workflow](#multi-agent-workflow)
+- [Recipe Scaling](#recipe-scaling)
+- [RAG-Based Nutrition Assistant](#rag-based-nutrition-assistant)
+- [Allergy Management and Safety](#allergy-management-and-safety)
+- [Tech Stack](#tech-stack)
 - [Repository Structure](#repository-structure)
-- [Installation and Setup](#installation-and-setup)
-- [How to Run](#how-to-run)
-- [Test Results and Verification](#test-results-and-verification)
-- [Current Limitations and Future Work](#current-limitations-and-future-work)
-- [Team Handover and Git Status](#team-handover-and-git-status)
+- [Backend API](#backend-api)
+- [Prerequisites](#prerequisites)
+- [Installation](#installation)
+- [Running NutriScale](#running-nutriscale)
+- [Android App Setup](#android-app-setup)
+- [Testing](#testing)
+- [Demo](#demo)
+- [Current Limitations](#current-limitations)
 
----
+## Key Features
 
-## Project Overview
+- **Deterministic recipe scaling** using `scale_recipe(servings_original, servings_target, ingredient_amount)`.
+- **Sequential calorie estimation** that uses the scaled quantity, not the original quantity.
+- **RAG-grounded nutrition answers** from local documents for rice, chicken, and pasta.
+- **Explicit unknown handling** for ingredients that are not present in the local knowledge base.
+- **Guarded execution** for negative quantities, unsupported medical keywords, ambiguous ingredients, and declared allergens.
+- **Persistent user preferences and allergens** in the TA2 SQLite database.
+- **Thread-level conversation memory** using LangGraph `MemorySaver`.
+- **Execution traces** showing guard decisions, routing, agent activity, and timing.
+- **Native Android interface** for recipe scaling, chat, health status, and allergy management.
+- **FastAPI endpoints** for Android and other local HTTP clients.
 
-Recipe preparation often requires scaling batch sizes while monitoring nutritional intake. Manual calculations are prone to arithmetic errors, while general-purpose large language models (LLMs) frequently hallucinate quantities or struggle with chained mathematical reasoning.
-
-NutriScale addresses this by combining the natural-language comprehension of an LLM with deterministic Python calculation tools and grounded local knowledge retrieval:
-- **Local Inference:** Fully private execution using Ollama with `qwen2.5:3b` and `nomic-embed-text`. No cloud APIs or external API keys are required.
-- **Autonomous Multi-Agent Loop:** The system inspects user requests, routes to specialized agents, executes tools sequentially, and preserves exact mathematical results.
-- **Safety Gating:** Pre-execution checks block harmful queries, impossible quantities (e.g., negative amounts), declared allergens, and ambiguous ingredients before any calculation begins.
-
----
-
-## Evolution: TA1 vs. TA2
-
-The project evolved from a single autonomous agent into a modular multi-agent system with defensive gating and long-term memory:
-
-| Aspect | TA1 — Original Baseline | TA2 — Multi-Agent Extension | Why It Matters |
-|---|---|---|---|
-| **Architecture** | Single-agent ReAct loop (`create_agent`) | Multi-node `StateGraph` with explicit gating and routing | Separates safety validation, intent routing, and agent tasks |
-| **Agent Roles** | 1 general agent executing both tools | 2 specialized agents: `recipe_agent` & `nutrition_agent` | Clear division of responsibilities prevents prompt confusion |
-| **Orchestration** | Implicit loop inside LangGraph prebuilt agent | Deterministic supervisor node + recursion hop limit (max 10) | Prevents infinite agent loops and controls execution flow |
-| **Nutrition Lookup** | Hardcoded or user-supplied calorie densities | Chroma vector database (RAG) using `nomic-embed-text` | Grounded in verified local reference documents |
-| **Missing Ingredients** | Model or user supplied density directly | Explicit `UNKNOWN` returned; model guessing is forbidden | Eliminates nutritional hallucinations |
-| **Safety Validation** | Basic parameter validation inside tools | Two-tier pre-execution guards (Input Guard + Allergen Guard) | Blocks dangerous/invalid requests before tools execute |
-| **Allergen Checks** | None | SQLite-backed allergen matching with synonym/alias expansion | Prevents serving recipes matching declared user allergies |
-| **Memory** | Stateless (no memory between requests) | Thread memory (`MemorySaver`) + persistent SQLite (`memory.db`) | Context persists across turns and application restarts |
-| **Arithmetic Integrity** | Relied on LLM narrative response | Deterministic tool output extracted and enforced in final answer | Prevents small-model arithmetic paraphrase drift |
-| **Result Verification**| None | Independent Scaling Critic verifying tolerance (1.0%) | Validates tool output against a pure formula baseline |
-| **User Interface** | Single-page Streamlit app (`app.py`) | Enhanced dashboard (`ta2/streamlit_app.py`) with memory & audit | Full visibility into safety guards, traces, and metrics |
-
----
-
-## TA1 — Original Baseline Implementation
-
-TA1 represents the original project deliverable preserved in both the root directory (`app.py`, `tools.py`, `test_tools.py`, `run_agent_demo.py`) and as a frozen snapshot in `ta1/`.
-
-### Architecture & Tools
-TA1 uses `create_agent` from `langchain.agents` backed by LangGraph:
-1. `scale_recipe(servings_original, servings_target, ingredient_amount)`:
-   $$\text{scaled\_amount} = \text{ingredient\_amount} \times \left(\frac{\text{servings\_target}}{\text{servings\_original}}\right)$$
-2. `estimate_calories(ingredient_amount, calories_per_unit)`:
-   $$\text{total\_calories} = \text{ingredient\_amount} \times \text{calories\_per_unit}$$
-
-The agent receives a single natural-language prompt, autonomously calls `scale_recipe`, feeds the resulting amount into `estimate_calories`, and outputs the final text.
-
-### Testing & Validation
-All inputs are validated against zero servings, negative servings, and negative quantities. TA1 includes 15 automated unit tests in `test_tools.py`, all of which pass (15/15).
-
----
-
-## TA2 — Multi-Agent Architecture
-
-TA2 replaces the single-agent pipeline with a modular `StateGraph` combining defensive gating, two specialized agents, and memory.
+## System Architecture
 
 ```mermaid
-flowchart TD
-    User([User Request + user_id + thread_id]) --> Guard[Input Guard Node]
-    Guard -->|Negative numbers or medical claims| Block1[BLOCKED & Terminated]
-    Guard -->|PASS| Allergen[Allergen & Ambiguity Guard Node]
-    Allergen -->|Declared allergen, alias, or unknown term| Block2[BLOCKED & Terminated]
-    Allergen -->|PASS| Supervisor[Supervisor Router Node]
-    
-    Supervisor -->|Recipe / Scaling Intent| RecipeAgent[Recipe Agent]
-    Supervisor -->|Nutrition Inquiry Intent| NutritionAgent[Nutrition Agent]
-    
-    subgraph Agents [Specialized Sub-Agents]
-        RecipeAgent --> Tool1[scale_recipe]
-        Tool1 --> Tool2[estimate_calories]
-        NutritionAgent --> Tool3[(Chroma Vector DB / RAG)]
+flowchart LR
+    A["Android app\nKotlin + Jetpack Compose"] -->|HTTP / Retrofit| B["FastAPI gateway\napi_server/app"]
+    C["Streamlit UI"] --> D["TA2 LangGraph workflow"]
+    B --> D
+
+    subgraph Workflow["Guarded multi-agent workflow"]
+        D --> E["Guard"]
+        E -->|PASS| F["Allergen Guard"]
+        F -->|PASS| G["Supervisor"]
+        G -->|recipe| H["Recipe Agent"]
+        G -->|nutrition| I["Nutrition Agent"]
     end
-    
-    RecipeAgent --> Final[Final Response with Verified Tool Output]
-    NutritionAgent --> Final
+
+    H --> J["Recipe tools"]
+    J --> K["Deterministic scaling\nand calorie tools"]
+    I --> L["Nutrition RAG tool"]
+    L --> M["ChromaDB\nnutri_kb"]
+
+    D --> N["SQLite\nmemory.db"]
+    N --> F
+    N --> D
+    D --> O["Ollama\nqwen2.5:3b"]
 ```
 
-### Components and Responsibilities
+The `scale` API can also perform direct scaling and RAG calorie lookup without invoking the conversational agent graph. The `chat` API calls the full LangGraph workflow.
 
-1. **Input Guard (`guard_node`):**
-   - Scans raw request for negative numeric quantities (`-\d+`).
-   - Scans for unsupported medical/clinical claims (`cure`, `treat`, `diagnose`, `prescription`, `disease`).
-   - Halts execution immediately if triggered.
+## Multi-Agent Workflow
 
-2. **Allergen & Ambiguity Guard (`allergen_guard_node`):**
-   - Reads declared user allergies from the persistent SQLite store.
-   - Evaluates request text against stored allergens and culinary aliases (`dairy` $\leftrightarrow$ `milk`/`cheese`/`butter`, `gluten` $\leftrightarrow$ `wheat`/`flour`/`bread`, `peanut` $\leftrightarrow$ `groundnut`, `soy`, `egg`).
-   - Uses regex word-boundary matching (`\b`) to prevent false-positive substring collisions.
-   - Rejects ambiguous or unspecified food requests (e.g., "unknown mystery ingredient") with an explicit `UNKNOWN` classification.
+### 1. Guard
 
-3. **Supervisor Router (`supervisor_node`):**
-   - Inspects cleaned request intent.
-   - Routes scaling and composite recipe requests to the `recipe_agent`.
-   - Routes pure nutritional queries to the `nutrition_agent`.
-   - Enforces a recursion limit of 10 hops to prevent infinite execution loops.
+The input guard checks for:
 
-4. **Recipe Agent (`recipe_agent`):**
-   - Configured with strict sequential execution constraints: invokes `scale_recipe` first, waits for the observation, and passes the scaled quantity to `estimate_calories`.
-   - Never uses original input quantities for calorie estimation.
+- negative numeric values;
+- unsupported medical or clinical claims containing keywords such as `cure`, `treat`, `diagnose`, `medic`, `prescription`, or `disease`.
 
-5. **Nutrition Agent (`nutrition_agent`):**
-   - Grounded in local reference documents using Chroma and `nomic-embed-text`.
-   - Extracts calorie density and macro summaries with explicit food state attribution (cooked vs. raw).
-   - Returns explicit `UNKNOWN` if an ingredient is missing from the local corpus.
+A blocked request terminates before the supervisor or agents run.
 
-6. **Independent Scaling Critic (`scaling_critic.py`):**
-   - A standalone Python evaluation module that independently re-computes:
-     $$\text{expected} = \frac{\text{original\_amount} \times \text{target\_servings}}{\text{original\_servings}}$$
-   - Verifies agent tool output against an allowed 1.0% tolerance, flagging any injected deviation as a `FAIL`.
-   - Safely catches invalid or negative parameters as `INVALID_INPUT`.
+### 2. Allergen Guard
 
-7. **Memory Architecture:**
-   - **Short-Term Memory:** LangGraph `MemorySaver` preserves conversational context within a session thread (`thread_id`).
-   - **Long-Term Memory:** SQLite database (`ta2/memory.db`) persists `prefs` (e.g., dietary style) and `allergies` (declared allergens) across process restarts.
+The allergen guard loads declared allergies for the supplied `user_id` from `ta2/memory.db`. It checks exact allergen names and configured aliases, for example:
 
-8. **Deterministic Arithmetic Output:**
-   - Small models (such as `qwen2.5:3b`) can experience narrative paraphrase drift during text generation.
-   - TA2 extracts the deterministic `ToolMessage` calculation and explicitly binds it to the output string (`[Tool output] Estimated calories: 520.00 kcal`), ensuring calculated truth is always presented.
+- `dairy`, `milk`, `cheese`, `butter`, `cream`, `yogurt`;
+- `gluten`, `wheat`, `barley`, `rye`, `bread`, `flour`;
+- `peanut`, `peanuts`, `groundnut`, `peanut butter`.
 
-9. **Prototype Size Constraint:**
-   - `ta2/prototype.py` contains **113 physical lines** (95 executable lines), fully complying with the academic constraint of **$\le$120 lines**.
+It also blocks requests containing words such as `unknown`, `mystery`, or `unnamed`.
 
----
+### 3. Supervisor
 
-## Walkthrough Example
+The supervisor routes a request to:
 
-Consider the standard evaluation request:
-> *"Scale 200g of rice from 4 servings to 8 servings. Calories per gram: 1.3."*
+- `recipe` for scaling or serving changes;
+- `nutrition` for nutrition and calorie questions.
 
-```
-User Request: 200g cooked white rice (4 -> 8 servings, 1.3 kcal/g)
-  │
-  ├── 1. Input Guard: No negative numbers, no medical claims -> PASS
-  ├── 2. Allergen Guard: User allergies checked (no match) -> PASS
-  ├── 3. Supervisor: Scaling intent detected -> Routes to Recipe Agent
-  ├── 4. Tool Execution (Step 1):
-  │      scale_recipe(amount=200, orig_serv=4, target_serv=8)
-  │      --> Scaled Amount: 400.00 g (Factor: 2.0x)
-  ├── 5. Tool Execution (Step 2 - Sequential):
-  │      estimate_calories(amount=400.00, calories_per_unit=1.3)
-  │      --> Total Calories: 520.00 kcal (400.00 x 1.3)
-  └── 6. Final Verified Response:
-         Scaled quantity: 400.00 g
-         Estimated calories: 520.00 kcal
-         [Tool output] Estimated calories: 520.00 kcal (400.00 units x 1.3 kcal/unit = 520.00 kcal)
+The graph recursion limit is 10 hops.
+
+### 4. Recipe Agent
+
+The recipe agent is instructed to call `scale_recipe` first and pass the resulting scaled quantity to `estimate_calories` second. This prevents the common 200 g to 260 kcal error in the canonical 200 g, 4-to-8-serving example.
+
+### 5. Nutrition Agent
+
+The nutrition agent uses `retrieve_nutrition_info`, searches ChromaDB for the most relevant local reference documents, and cites the retrieved source in its response. It returns an unknown or unavailable message for missing reference data instead of inventing values.
+
+## Recipe Scaling
+
+The scaling formula is:
+
+```text
+scaled_amount = original_amount × (target_servings / original_servings)
 ```
 
-**Sequential Dependency Rule:** `estimate_calories` must receive 400g (the scaled amount). If an agent passes the original 200g, it incorrectly outputs 260 kcal. TA2's prompt sequencing and regression suite guarantee the 400g input.
+### Verified example
 
----
+For 200 g of rice:
+
+- original servings: `4`
+- target servings: `8`
+- scale factor: `8 / 4 = 2`
+- scaled amount: `200 × 2 = 400 g`
+- rice calorie density: `1.3 kcal/g`
+- estimated calories: `400 × 1.3 = 520 kcal`
+
+The TA2 implementation also provides `rag_scale_and_estimate`, while the direct `/scale` API retrieves a supported ingredient's density from RAG and calculates:
+
+```text
+estimated_calories = scaled_amount × calorie_density
+```
+
+For an ingredient outside the current knowledge base, the API keeps the scaled quantity but returns `is_rag_verified: false`, `estimated_calories: null`, and `calorie_density: null`.
+
+## RAG-Based Nutrition Assistant
+
+The RAG implementation is lazy-loaded by `ta2/ta2_tools.py`:
+
+1. TextLoader reads `.txt` files from `ta2/knowledge/`.
+2. `CharacterTextSplitter` creates document chunks.
+3. Ollama `nomic-embed-text` embeddings populate a Chroma collection.
+4. The persistent database is stored in `ta2/chroma_db/`.
+5. Nutrition queries retrieve two relevant documents for general retrieval.
+6. Calorie-density lookup retrieves the most relevant document and extracts a `kcal per gram` value.
+
+The bundled references cover:
+
+- cooked white rice;
+- cooked/raw chicken breast;
+- dry and cooked pasta.
+
+Retrieved information is explicitly reference data and is accompanied by a disclaimer rather than being presented as a medically precise value.
+
+## Allergy Management and Safety
+
+Persistent allergy records are stored in SQLite under the `allergies` table in `ta2/memory.db`. The Android app and API provide get, add, and remove operations for allergens.
+
+Safety behavior includes:
+
+- input validation for non-positive servings and negative amounts;
+- request-level keyword and negative-number blocking;
+- declared-allergy and alias matching;
+- ambiguity blocking for unknown or unnamed ingredients;
+- explicit `UNKNOWN` results for missing RAG ingredients;
+- source attribution for RAG-grounded calorie responses.
+
+These guards are helpful safety aids, not a substitute for professional dietary or medical guidance.
+
+## Tech Stack
+
+| Area | Technology |
+|---|---|
+| Language | Python |
+| Baseline UI | Streamlit |
+| Backend API | FastAPI, Uvicorn, Pydantic |
+| Agent framework | LangGraph, LangChain |
+| Local LLM | Ollama, `qwen2.5:3b` |
+| Embeddings / RAG | Ollama `nomic-embed-text`, ChromaDB |
+| Persistent memory | SQLite (`ta2/memory.db`) |
+| Android language | Kotlin |
+| Android UI | Jetpack Compose, Material 3 |
+| Android navigation | Navigation Compose |
+| Android networking | Retrofit, OkHttp, Gson |
+
+The Android app targets API 34, supports a minimum SDK of 24, and uses Java/Kotlin target 17.
 
 ## Repository Structure
 
-```
+```text
 NutriScale/
-├── app.py                         # TA1 Streamlit interface (frozen baseline)
-├── tools.py                       # TA1 tools: scale_recipe, estimate_calories
-├── run_agent_demo.py              # TA1 CLI demo script
-├── test_tools.py                  # TA1 unit test suite (15 test cases)
+├── app.py                         # TA1 Streamlit application
+├── tools.py                       # TA1 LangChain tools
+├── run_agent_demo.py              # Annotated TA1 CLI demo
+├── test_tools.py                  # 15-case tool test script
 ├── requirements.txt               # TA1 Python dependencies
-├── README.md                      # Root documentation (this file)
-│
-├── ta1/                           # Bit-identical frozen backup of TA1
-│   ├── app.py
-│   ├── tools.py
-│   ├── run_agent_demo.py
-│   ├── test_tools.py
-│   ├── requirements.txt
-│   └── README.md
-│
-└── ta2/                           # TA2 Multi-Agent Extension
-    ├── prototype.py               # Core multi-agent execution graph (113 physical lines)
-    ├── ta2_tools.py               # TA2 tools, Chroma RAG integration, and helper functions
-    ├── streamlit_app.py           # TA2 modern Streamlit dashboard
-    ├── requirements.txt           # TA2 Python dependencies
-    ├── README.md                  # TA2-specific documentation
-    ├── memory.db                  # Persistent SQLite store (prefs and allergies tables)
-    ├── scratch_db_inspect.py      # Diagnostic script for SQLite inspection
-    │
-    ├── chroma_db/                 # Persistent Chroma vector store
-    │   └── chroma.sqlite3
-    │
-    ├── knowledge/                 # Local RAG knowledge base documents
-    │   ├── rice_nutrition.txt     # Cooked white rice reference (1.3 kcal/g)
-    │   ├── chicken_nutrition.txt  # Cooked chicken breast (1.65 kcal/g) vs raw (1.1 kcal/g)
-    │   └── pasta_nutrition.txt    # Dry pasta (3.5 kcal/g) vs cooked pasta (1.3-1.6 kcal/g)
-    │
-    ├── tests/                     # TA2 automated test suites
-    │   ├── test_scaling_calorie_regression.py  # Regression test for sequential 400g -> 520 kcal
-    │   ├── allergen_tests.py      # 4-case allergen & ambiguity suite
-    │   ├── scaling_critic.py      # Independent mathematical scaling critic
-    │   ├── rag_vs_manual.py       # RAG comparison against manual baselines
-    │   └── eval_both.py           # 5-case comparative evaluation (TA1 vs TA2)
-    │
-    └── results/                   # Evaluation outputs and saved execution traces
-        ├── ta1_results.json       # Structured TA1 evaluation output
-        ├── ta2_results.json       # Structured TA2 evaluation output
-        ├── rag_vs_manual.json     # RAG vs manual numerical comparisons
-        └── traces/
-            ├── allergen_tests_trace.json
-            ├── scaling_critic_trace.json
-            ├── tc1_trace.json     # Basic recipe scaling trace
-            ├── tc2_trace.json     # RAG nutrition inquiry trace
-            ├── tc3_trace.json     # Thread memory follow-up trace
-            ├── tc4_trace.json     # Long-term SQLite memory recall trace
-            └── tc5_trace.json     # Guard negative rejection trace
+├── ta1/                           # Frozen TA1 source snapshot
+├── ta2/
+│   ├── prototype.py               # LangGraph workflow and SQLite memory
+│   ├── ta2_tools.py               # Recipe, calorie, and RAG tools
+│   ├── streamlit_app.py           # TA2 dashboard
+│   ├── memory.db                  # Persistent preferences/allergies
+│   ├── knowledge/                 # Rice, chicken, and pasta references
+│   ├── chroma_db/                 # Persistent ChromaDB data
+│   ├── tests/                     # Regression and evaluation scripts
+│   └── results/                   # Saved evaluations and traces
+├── api_server/
+│   ├── app/main.py                # FastAPI application
+│   ├── app/schemas.py             # Pydantic request/response models
+│   ├── app/core/config.py         # Ollama and project paths
+│   ├── app/services/              # Bridge to TA2 components
+│   └── test_e2e_api.py            # API end-to-end test script
+└── android-app/
+    └── app/src/main/
+        ├── java/com/nutriscale/app/
+        └── AndroidManifest.xml
 ```
 
----
+## Backend API
 
-## Installation and Setup
+Start the API with Uvicorn and use the following endpoints.
 
-### Prerequisites
-- Python 3.10 to 3.14 on Windows (PowerShell).
-- [Ollama](https://ollama.com/) installed and added to your system `PATH`.
+| Method | Path | Purpose |
+|---|---|---|
+| `GET` | `/health` | Ollama connectivity and LangGraph initialization status |
+| `POST` | `/scale` | Deterministic scaling, stored-allergen check, and RAG calorie lookup |
+| `POST` | `/chat` | Guarded conversational LangGraph workflow |
+| `GET` | `/allergies/{user_id}` | Load a user's allergies |
+| `POST` | `/allergies` | Add an allergy using a JSON body |
+| `POST` | `/allergies/{user_id}` | Add an allergy using a path user ID |
+| `POST` | `/allergies/remove` | Remove an allergy using a JSON body |
+| `DELETE` | `/allergies/{user_id}/{allergen}` | Remove an allergy using path parameters |
 
-### Step 1: Clone or Navigate to the Workspace
+Interactive OpenAPI documentation is available at `/docs` when the FastAPI server is running.
+
+### Example `/scale` request
+
+```json
+{
+  "ingredient_name": "rice",
+  "original_amount": 200.0,
+  "original_servings": 4.0,
+  "target_servings": 8.0,
+  "user_id": "demo_user"
+}
+```
+
+### Example `/chat` request
+
+```json
+{
+  "message": "What are the calories in 100g of white rice?",
+  "user_id": "demo_user",
+  "thread_id": "thread_session_1"
+}
+```
+
+## Prerequisites
+
+- Windows, macOS, or Linux
+- Python 3.10 or newer
+- [Ollama](https://ollama.com/) running locally
+- JDK 17 for the Android project
+- Android Studio for the Android app
+
+The repository's Python manifests do not pin exact Python patch versions. The Android Gradle wrapper uses Gradle 8.1.1 and the Android plugin 8.1.1.
+
+## Installation
+
+Clone or open the repository, then open a terminal at the project root.
+
 ```powershell
 cd W:\Ayoo\NutriScale
+python -m pip install -r ta2\requirements.txt
+python -m pip install -r api_server\requirements.txt
 ```
 
-### Step 2: Install Python Dependencies
-```powershell
-pip install -r ta2/requirements.txt
-```
-*(Dependencies include `langchain`, `langgraph`, `langchain-ollama`, `chromadb`, `langchain-community`, and `streamlit`.)*
+Pull the required Ollama models:
 
-### Step 3: Verify and Pull Ollama Models
-Ensure your local Ollama daemon is active. If Ollama is already running at `http://127.0.0.1:11434`, do not start a second instance.
-
-Verify or pull the required models:
 ```powershell
 ollama pull qwen2.5:3b
 ollama pull nomic-embed-text
 ```
 
-Verify available models:
+Verify availability:
+
 ```powershell
 ollama list
 ```
-*(You should see `qwen2.5:3b` and `nomic-embed-text:latest`.)*
 
----
+## Running NutriScale
 
-## How to Run
+### TA2 Streamlit UI
 
-### 1. Launch the TA2 Streamlit Dashboard
 ```powershell
 cd W:\Ayoo\NutriScale
-streamlit run ta2/streamlit_app.py
+streamlit run ta2\streamlit_app.py
 ```
-*Features interactive recipe input, allergen guard indicators, scaling preview, live agent trace inspection, and SQLite memory management.*
 
-### 2. Launch the Frozen TA1 Baseline Dashboard
+### TA1 Streamlit UI
+
 ```powershell
 cd W:\Ayoo\NutriScale
-streamlit run app.py --server.port 8501
+streamlit run app.py
 ```
-*(If running both simultaneously, specify different ports, e.g., `--server.port 8501` and `--server.port 8502`.)*
 
-### 3. Run the TA1 CLI Demonstration
+### TA1 annotated CLI demo
+
 ```powershell
 cd W:\Ayoo\NutriScale
 python -X utf8 run_agent_demo.py
 ```
 
-### 4. Run the Test Suites
+### FastAPI gateway
 
-#### A. TA2 Scaling-to-Calorie Regression Test
-Verifies that `estimate_calories` receives the scaled 400g input rather than the original 200g:
 ```powershell
-python -X utf8 ta2/tests/test_scaling_calorie_regression.py
+cd W:\Ayoo\NutriScale\api_server
+python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
 
-#### B. Allergen and Ambiguity Guard Tests
-Executes 4 live test cases (Direct Match, Safe Ingredient, Ambiguity Block, Alias Match):
+Health check:
+
 ```powershell
-python -X utf8 ta2/tests/allergen_tests.py
+curl http://127.0.0.1:8000/health
 ```
 
-#### C. Independent Scaling Critic
-Executes formula checks across normal scaling, a deliberately injected 100g error, and invalid inputs:
+## Android App Setup
+
+### Emulator
+
+The app defaults to `http://10.0.2.2:8000/`. Android Emulator uses this address to reach the host machine's local port.
+
+From Android Studio:
+
+1. Open `android-app/` as the Gradle project.
+2. Let Gradle synchronize.
+3. Start the FastAPI server on the host machine.
+4. Start an emulator and run the `app` configuration.
+
+### Physical Android device
+
+1. Connect the phone and laptop to the same network.
+2. Start FastAPI on `0.0.0.0:8000`.
+3. Find the laptop's active Wi-Fi IPv4 address using `ipconfig`.
+4. Open the app's **Profile & Settings** screen.
+5. Enter `http://<LAPTOP_IPV4>:8000/` in **Base URL** and save it.
+
+The app allows cleartext HTTP and includes an emulator and localhost preset. It also exposes a Wi-Fi preset field that can be replaced with the device's reachable laptop address.
+
+From the command line:
+
 ```powershell
-python -X utf8 ta2/tests/scaling_critic.py
+cd W:\Ayoo\NutriScale\android-app
+.\gradlew.bat assembleDebug
 ```
 
-#### D. RAG vs. Manual Calorie Comparison
-Compares RAG retrieved values with manual baselines and verifies `UNKNOWN` handling for missing foods:
+The debug APK is generated under `android-app/app/build/outputs/apk/debug/`.
+
+## Testing
+
+### Root TA1 tool tests
+
 ```powershell
-python -X utf8 ta2/tests/rag_vs_manual.py
+cd W:\Ayoo\NutriScale
+python -X utf8 test_tools.py
 ```
 
-#### E. End-to-End Comparative Evaluation (TA1 vs. TA2)
-Runs the standardized 5-case evaluation against both implementations:
+Verified result: 15 of 15 cases passed.
+
+### TA2 scaling regression
+
 ```powershell
-python -X utf8 ta2/tests/eval_both.py
+python -X utf8 ta2\tests\test_scaling_calorie_regression.py
 ```
 
-#### F. TA1 Frozen Baseline Unit Tests
-Verifies that TA1 remains completely functional:
+This verifies that 200 g scaled from 4 to 8 servings becomes 400 g and produces 520 kcal at 1.3 kcal/g.
+
+### Additional repository test scripts
+
 ```powershell
-python -X utf8 ta1/test_tools.py
+python -X utf8 ta2\tests\allergen_tests.py
+python -X utf8 ta2\tests\scaling_critic.py
+python -X utf8 ta2\tests\rag_vs_manual.py
+python -X utf8 ta2\tests\eval_both.py
 ```
 
----
+### FastAPI end-to-end test
 
-## Test Results and Verification
+Start Ollama and the FastAPI server first, then run:
 
-All tests were executed directly in PowerShell. Below are the verified results:
+```powershell
+cd W:\Ayoo\NutriScale\api_server
+python -X utf8 test_e2e_api.py
+```
 
-| Test Suite | Command | Cases | Result |
-|---|---|:---:|:---:|
-| **TA1 Tool Unit Tests** | `ta1/test_tools.py` | 15 | **15/15 PASS** |
-| **Scaling Regression** | `ta2/tests/test_scaling_calorie_regression.py` | 1 | **PASS** (400g $\rightarrow$ 520 kcal) |
-| **Allergen Guard** | `ta2/tests/allergen_tests.py` | 4 | **4/4 PASS** |
-| **Scaling Critic** | `ta2/tests/scaling_critic.py` | 6 | **6/6 PASS** (caught injected error) |
-| **RAG vs Manual** | `ta2/tests/rag_vs_manual.py` | 3 | **3/3 PASS** |
-| **Comparative Suite** | `ta2/tests/eval_both.py` | 5 | **TA1: 3/5 PASS (2 N/A)**<br>**TA2: 5/5 PASS (100%)** |
+The script exercises health, scaling, RAG source attribution, chat, persistent allergies, conversation continuity, guard behavior, and unknown ingredients.
 
-### Breakdown of the 5 Comparative Cases (`eval_both.py`)
-1. **TC1 — Recipe Scaling & Calorie Estimation:** Both pass. TA2 enforces deterministic tool output in final answer.
-2. **TC2 — RAG Reference Inquiry:** TA1 uses fixed parameters; TA2 retrieves from `chicken_nutrition.txt` via Chroma.
-3. **TC3 — Short-Term Thread Memory:** TA1 lacks memory (N/A); TA2 successfully recalls scaled quantities from prior turn via `thread_id`.
-4. **TC4 — Long-Term Memory Recall:** TA1 lacks persistence (N/A); TA2 recalls user preferences from SQLite in a fresh thread.
-5. **TC5 — Negative Value Rejection:** Both pass. TA1 rejects within tool; TA2 gates at the graph entry guard.
+### Android test assembly
 
----
+```powershell
+cd W:\Ayoo\NutriScale\android-app
+.\gradlew.bat test
+```
 
-## Current Limitations and Future Work
+This runs the Android local JVM test task; it does not require the emulator.
 
-### Limitations
-1. **Knowledge Base Corpus:** Local Chroma database currently contains reference profiles for white rice, chicken breast, and pasta. Unindexed ingredients return explicit `UNKNOWN` values without fabricating data.
-2. **Allergen Synonyms:** The guard checks declared allergens against common aliases (`wheat`/`flour`/`bread`, `peanut`/`groundnut`, `milk`/`dairy`). It does not detect obscure culinary derivatives or unlisted allergens.
-3. **Short-Term Memory Scope:** LangGraph `MemorySaver` maintains thread context in memory; it resets upon application process restart. Persistent memory across restarts is managed by the SQLite store.
-4. **Local Hardware Dependency:** Local inference speed depends on your GPU/CPU configuration.
+## Demo
 
-### Future Improvements
-- Expand the local knowledge base with additional USDA FoodData Central reference entries.
-- Add comprehensive cross-allergen ontologies using structured biomedical vocabulary (e.g., FoodEx2).
-- Integrate an optional human-in-the-loop approval step before executing large commercial recipe batches.
+### 1. Start the local backend
 
----
+```powershell
+ollama serve
+```
 
-## Team Handover and Git Status
+In another terminal:
 
-For teammates reviewing or presenting this repository:
-1. **Git State:** `ta1/` and `ta2/` are clean and verified. Ensure you do not commit temporary cache files (`__pycache__`, `.pytest_cache`) or local SQLite lock files.
-2. **Preserve Isolation:** Never edit files inside `ta1/`. It must remain the frozen baseline for comparative benchmarking.
-3. **Presentation Tip:** During jury review, demonstrate the live Streamlit dashboard (`ta2/streamlit_app.py`), trigger an allergen block (e.g., entering "wheat bread" with a stored wheat allergy), and show the real execution trace in the UI.
+```powershell
+cd W:\Ayoo\NutriScale\api_server
+python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
+```
+
+### 2. Try recipe scaling
+
+Open `/docs` or call `/scale` with:
+
+- ingredient: `rice`
+- original amount: `200`
+- original servings: `4`
+- target servings: `8`
+
+The response should report a scale factor of `2`, a scaled amount of `400 g`, a density of `1.3 kcal/g`, and `520 kcal` for the bundled rice reference.
+
+### 3. Try the nutrition assistant
+
+Ask through `/chat` or the Android chat screen:
+
+```text
+What are the calories in 100g of white rice?
+```
+
+### 4. Try the safety guard
+
+Save `dairy` as an allergy for a user, then submit a recipe containing `milk` or another configured alias. The allergen guard should block the request before scaling.
+
+### 5. Open the Streamlit trace UI
+
+```powershell
+streamlit run ta2\streamlit_app.py
+```
+
+Use the dashboard to inspect route selection, guard decisions, response traces, SQLite memory, and RAG lookup behavior.
+
+## Current Limitations
+
+- The bundled RAG corpus contains only rice, chicken, and pasta reference files. Other ingredients can return `UNKNOWN` or `is_rag_verified: false`.
+- The allergen implementation uses a small alias table and exact word matching. It does not provide a complete allergy ontology or detect every culinary derivative.
+- Nutrition values are reference estimates, not medically precise measurements.
+- Short-term conversation memory is scoped by LangGraph thread configuration; SQLite is used for persistent preferences and allergies.
+- Ollama startup and model availability are local prerequisites. `/health` reports degraded status when Ollama is unavailable.
+- Chroma and embedding setup occur lazily in the tools and require `nomic-embed-text` to be available locally.
+- The Streamlit and FastAPI experiences are designed for local or LAN use, not as a public production deployment.
